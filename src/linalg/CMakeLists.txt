@@ -1,0 +1,9 @@
+include_directories (${CODE_TEST_SOURCE_DIR}/src)
+
+SET (LINALG_SRC linAlg.cpp)
+add_library(linAlg ${LINALG_SRC} )
+
+TARGET_LINK_LIBRARIES(linAlg ${MKL_LIBS})
+INSTALL(TARGETS linAlg DESTINATION ${CODE_TEST_SOURCE_DIR}/lib)
+INSTALL(FILES linAlg.h DESTINATION ${CODE_TEST_SOURCE_DIR}/include)
+
