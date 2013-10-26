@@ -33,7 +33,6 @@ void distLinAlg::init()
   blacs_pinfo_( &hN, &nprocs );
   blacs_get_(  &hN,  &hN, &icontxt);
   blacs_gridinit_( &icontxt, &order, &nprow, &npcol ); 
-  int mr(0),mc(0);
   blacs_gridinfo_( &icontxt, &nprow, &npcol, &mr, &mc ); 
 
   int info(0);
@@ -45,6 +44,19 @@ void distLinAlg::init()
   
   desca.resize(9,0);
   descinit_( &desca[0], &n, &n, &nB, &nB, &hN, &hN,  &icontxt, &cN, &info );
-//   std::copy(desca.begin(), desca.end(), std::ostream_iterator<int>(std::cout, "  "));
+  blacs_gridinfo_( &icontxt, &nprow, &npcol, &mr, &mc ); 
+
+  
+  //   std::copy(desca.begin(), desca.end(), std::ostream_iterator<int>(std::cout, "  "));
 //   std::cout<<std::endl;
+};
+
+
+void distLinAlg::invert()
+{
+  char uplo('U');
+  int info(0);
+  int N(A->size1());
+  pdpotrf_(&uplo, &N, &((*A)(0,0)), &mr, &mc, &desca[0], &info);
+  pdpotri_(&uplo, &N, &((*A)(0,0)), &mr, &mc, &desca[0], &info);
 };

@@ -8,7 +8,8 @@ using namespace std;
 class distLinAlg {
   
   public:
-    distLinAlg(int np, int me, int nr, int nc): order('R'), mypnum(me), nprocs(np), icontxt(0), what(0), nprow(nr), npcol(nc)
+    distLinAlg(int np, int me, int nr, int nc): order('R'), mypnum(me), nprocs(np), icontxt(0), 
+                                                what(0), nprow(nr), npcol(nc), mr(0), mc(0)
     {
     };
     
@@ -20,10 +21,12 @@ class distLinAlg {
     };
     
     void init();
+    void invert();
     
   private:
     char order;
     int mypnum, nprocs, icontxt, what, val, nprow, npcol;
+    int mr, mc;
     vector<int> desca;
     Tmatrix* A;
 };
