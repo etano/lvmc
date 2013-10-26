@@ -46,37 +46,77 @@ struct parameter
 
 struct control_block
 { 
-  public:
     enum{silent=0, essential, chatty, debug};
   
     prop_tree::ptree pt;
     std::string infile_name;
     std::string outfile_name;
-    parameterset<RealType> pvec;
-    parameter<bool> p;
-    int verbosity;
 
+// General controls
+    int verbosity;
+    std::vector<int> p_grid;
     
-    void read(const string& iname)
+// for optimization    
+    bool opt;
+    RealType ftol,xtol;
+    
+// for GAP function
+    std::vector<RealType> f_parameters;
+    RealType f_exp;
+    
+// for Configurations
+    std::string conf_file;
+    int n_test, n_train;
+    
+    control_block(const string& iname): infile_name(iname), outfile_name("default_out.xml"), verbosity(0), 
+                     opt(false), ftol(0.01), xtol(0.01), f_exp(2.0), conf_file("test.xyz"), n_test(100), n_train(100)
     {
-      infile_name=iname;
-      xmlparser::read(iname, pt);
+      p_grid.resize(2,1);
+    };
+    
+    void read()
+    {
+      xmlparser::read(infile_name, pt);
       
-      p.name="boolean";
       verbosity=pt.get<int>("control.verbosity");
       std::cout<< "Verbosity: " << verbosity <<std::endl;
-
-      p.name="boolean";
-      p.param=pt.get<bool>("control.p");
-      if(verbosity>1)
-      p.print();
       
-      pvec.name="real vector";
-      string pvec_str(pt.get<string>("control.pset"));
-      std::istringstream iss(pvec_str);
-      std::copy(std::istream_iterator<RealType>(iss), std::istream_iterator<RealType>(), std::back_inserter(pvec.param));
+      p_grid[0]=pt.get<int>("control.parallel.nc");
+      p_grid[1]=pt.get<int>("control.parallel.nr");
       if(verbosity>1)
-        pvec.print();
+        std::cout<<p_grid[0]<<" "<<p_grid[1]<<std::endl;
+        
+      f_exp=pt.get<RealType>("control.function.exp");
+      if(verbosity>1)
+        std::cout<<f_exp<<std::endl;
+
+      string pvec_str(pt.get<string>("control.function.params"));
+      std::istringstream iss(pvec_str);
+      std::copy(std::istream_iterator<RealType>(iss), std::istream_iterator<RealType>(), std::back_inserter(f_parameters));
+      if(verbosity>1)
+      {
+        std::copy(f_parameters.begin(), f_parameters.end(),
+        std::ostream_iterator<RealType>(std::cout, "  "));
+        std::cout<<std::endl;
+      }
+        
+
+      ftol=pt.get<RealType>("control.opt.ftol");
+      xtol=pt.get<RealType>("control.opt.xtol");
+      opt=pt.get<bool>("control.opt.on");
+      if( (verbosity>1) and opt )
+        std::cout<<xtol<<" "<<ftol<<std::endl;
+      
+      n_train=pt.get<int>("control.configurations.train");
+      n_test=pt.get<int>("control.configurations.test");
+      conf_file=pt.get<string>("control.configurations.file");
+      if(verbosity>1)
+        std::cout<< conf_file <<" "<<n_test<<" "<<n_train<<std::endl;
+      
+      outfile_name=pt.get<string>("control.output");
+      if(verbosity>1)
+        std::cout<< outfile_name <<std::endl;
+      
     };
     
     void write(const string& oname)
@@ -88,7 +128,7 @@ struct control_block
 
 namespace boost {
   namespace serialization {
-    
+        
     template<class Archive, class T>
     void serialize(Archive & ar, parameterset<T> & pms, const unsigned int version)
     {
@@ -106,12 +146,19 @@ namespace boost {
     template<class Archive>
     void serialize(Archive & ar, control_block & cb, const unsigned int version)
     {
-            ar & cb.pt;
-            ar & cb.infile_name;
-            ar & cb.outfile_name;
-            ar & cb.pvec;
-            ar & cb.p;
-            ar & cb.verbosity;
+      ar & cb.pt;
+      ar & cb.infile_name;
+      ar & cb.outfile_name;
+      ar & cb.p_grid;
+      ar & cb.verbosity;
+      ar & cb.opt;
+      ar & cb.ftol;
+      ar & cb.xtol;
+      ar & cb.f_parameters;
+      ar & cb.f_exp;
+      ar & cb.conf_file;
+      ar & cb.n_test;
+      ar & cb.n_train;      
     }
   } // namespace serialization
 } // namespace boost

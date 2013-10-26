@@ -1,6 +1,23 @@
 <?xml version="1.0"?>
 <control>
 <verbosity> 1 </verbosity>
-<p> false </p>
-<pset> 0.0 1.0 2.0 3.0 4.4 </pset>
+<parallel>
+  <nc> 2 </nc>
+  <nr> 2 </nr>
+</parallel>
+<opt>
+  <on> true </on>
+  <ftol> 0.1 </ftol>
+  <xtol> 0.01 </xtol>
+</opt>  
+<function>
+  <exp> 2.0 </exp>
+  <params> 0.0 1.0 2.0 3.0 4.4 </params>
+</function>
+<configurations>
+  <file> test.xyz </file>
+  <train> 4000 </train>
+  <test> 4000 </test>
+</configurations>
+<output> dimerGAP </output>
 </control>

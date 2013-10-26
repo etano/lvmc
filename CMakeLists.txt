@@ -96,7 +96,7 @@ else()
   endif()
 endif()
 if(MKL_FOUND)
-  SET(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m mkl_blacs_lp64)
+  SET(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m mkl_scalapack_lp64 mkl_blacs_intelmpi_lp64 )
 endif()
 
 INCLUDE_DIRECTORIES(${CODE_TEST_SOURCE_DIR}/src)
