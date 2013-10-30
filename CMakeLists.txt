@@ -1,111 +1,100 @@
-PROJECT(CODE_TEST)
+PROJECT(ARMADILLO_TEST)
 
-SET(CMAKE_CXX_COMPILER mpiicpc)
-SET(CMAKE_C_COMPILER mpiicc)
-
-cmake_minimum_required(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 #if you don't want the full compiler output, remove the following line
 SET(CMAKE_VERBOSE_MAKEFILE OFF)
 
-#add definitions, compiler switches, etc.
-ADD_DEFINITIONS(-Wall -O3 -g -openmp)
-#set(CMAKE_EXE_LINKER_FLAGS -static)
+#-------------------------------------------------------------------
+# Options
+#-------------------------------------------------------------------
 
 SET(PRECISION double) #double float
+SET(USE_MPI TRUE)
+SET(QMC_BUILD_STATIC FALSE)
+SET(NDIM 2)
 
-# For home machine
-#export BOOST_HOME=~/src/boost_1_54_0
-#export CXX=icpc
-#export CC=icc
-#export PATH=$PATH:/opt/intel/composerxe-2011.4.191/bin/intel64
-#export MKL_HOME=/opt/intel/composerxe-2011.4.191/mkl
+#-------------------------------------------------------------------
+# Compilers
+#-------------------------------------------------------------------
+SET(C_FLAGS "-DH5_USE_16_API -O3 -msse3 -w -DNDIM=${NDIM}")
+IF(USE_MPI)
+  SET(C_FLAGS "${C_FLAGS} -DUSE_MPI -fopenmp")
+ENDIF(USE_MPI)
 
+SET(CMAKE_CXX_COMPILER,"CC")
+SET(CMAKE_CXX_FLAGS "${C_FLAGS}")
+SET(CMAKE_CXX_SOURCE_FILE_EXTENSIONS ,"cc")
 
-# # find BOOST
-SET(Boost_FOUND false)
-if(Boost_INCLUDE_DIR)
-  SET(Boost_FOUND true)
-else()
-  FIND_PATH(Boost_INCLUDE_DIR boost/config.hpp ${BOOST_HOME} ${BOOST_HOME}/include $ENV{BOOST_HOME} $ENV{BOOST_HOME}/include)
-  FIND_PATH(Boost_LINK_DIR libboost_system.a ${BOOST_HOME} ${BOOST_HOME}/lib $ENV{BOOST_HOME} $ENV{BOOST_HOME}/lib)
-  if(Boost_INCLUDE_DIR)
-    SET(Boost_FOUND true)
-  endif()
-endif()
-if(Boost_FOUND)
-  SET(BOOST_LIBS boost_timer boost_system boost_mpi boost_serialization)
-endif()
+SET(CMAKE_C_COMPILER,"cc")
+SET(CMAKE_C_FLAGS "-std=c99 ${C_FLAGS}")
+SET(CMAKE_C_SOURCE_FILE_EXTENSIONS ,"c")
 
-## # find LAPACK
-#FIND_PATH(LAPACK_LINK_DIR liblapack.a )
-#SET(LAPACK_FOUND false)
-#if(LAPACK_LINK_DIR)
-#  SET(LAPACK_FOUND true)
-#else()
-#  FIND_PATH(LAPACK_LINK_DIR liblapack.a /usr/lib ${LAPACK_HOME} ${LAPACK_HOME}/lib $ENV{LAPACK_HOME} $ENV{LAPACK_HOME}/lib)
-#  if(LAPACK_LINK_DIR)
-#    SET(LAPACK_FOUND true)
-#  endif()
-#endif()
-#if(LAPACK_FOUND)
-#  SET(LAPACK_LIBS lapack blas m )
-#endif()
+SET(CMAKE_Fortran_COMPILER,"ftn")
+SET(CMAKE_Fortran_FLAGS "-funroll-loops -O3")
+SET(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS ,"f")
 
+IF(QMC_BUILD_STATIC)
+  # Enable static linking
+  set(BUILD_STATIC_LIBS TRUE)
+  set(LINK_SEARCH_END_STATIC TRUE)
+  set(CMAKE_EXE_LINKER_FLAGS "-static -Wl,-Bstatic")
+  set(MPI_LINK_FLAGS "-Wl,-Bstatic")
+  set(LINK_SEARCH_END_STATIC TRUE)
+  set(HDF5_USE_STATIC_LIBRARIES TRUE)
 
+  # Disable shared linking
+  set(BUILD_SHARED_LIBS FALSE)
+  set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
+  set(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)
+  set(CMAKE_SHARED_LIBRARY_C_FLAGS)         # remove -fPIC
+  set(CMAKE_SHARED_LIBRARY_CXX_FLAGS)
+  set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)    # remove -rdynamic
+  set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+ENDIF(QMC_BUILD_STATIC)
 
-#FIND_PATH(MPI_INCLUDE_DIR mpi.h)
-#FIND_PATH(MPI_LINK_DIR libmpich.a)
-#SET(MPI_FOUND false)
-#if(MPI_INCLUDE_DIR)
-#  SET(MPI_FOUND true)
-#else()
-#  FIND_PATH(MPI_INCLUDE_DIR mpi.h /usr/include  /usr/include/mpich2)
-#  FIND_PATH(MPI_LINK_DIR libmpich.a /usr/lib )
-#  if(MPI_INCLUDE_DIR)
-#    SET(MPI_FOUND true)
-#  endif()
-#endif()
-#if(MPI_FOUND)
-#  SET(MPI_LIBS mpich mpichcxx mpl )
-#endif()
+#-------------------------------------------------------------------
+# Directories
+#-------------------------------------------------------------------
+SET(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib" CACHE PATH "Single output directory for building all libraries")
+SET(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin" CACHE PATH "Single output directory for building all executables")
+SET(CMAKE_INSTALL_PREFIX "$ENV{HOME}" CACHE PATH "Default install to home directory")
+SET(PROJECT_CMAKE "${CMAKE_SOURCE_DIR}/CMake")
+SET(BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
 
-# FIND_PATH(NLOPT_INCLUDE_DIR nlopt.hpp)
-# SET(NLOPT_FOUND false)
-# if(NLOPT_INCLUDE_DIR)
-#   SET(NLOPT_FOUND true)
-# else()
-#   FIND_PATH(NLOPT_INCLUDE_DIR nlopt.hpp ${NLOPT_HOME} ${NLOPT_HOME}/include $ENV{NLOPT_HOME} $ENV{NLOPT_HOME}/include)
-#   FIND_PATH(NLOPT_LIB_DIR libnlopt_cxx.a ${NLOPT_HOME} ${NLOPT_HOME}/lib $ENV{NLOPT_HOME} $ENV{NLOPT_HOME}/lib)
-#   if(NLOPT_INCLUDE_DIR)
-#     SET(NLOPT_FOUND true)
-#   endif()
-# endif()
+#-------------------------------------------------------------------
+# Dependencies
+#-------------------------------------------------------------------
 
 # find MKL
 FIND_PATH(MKL_INCLUDE_DIR mkl.h)
 FIND_PATH(MKL_LINK_DIR libmkl_core.a)
 SET(MKL_FOUND false)
-if(MKL_INCLUDE_DIR)
+IF(MKL_INCLUDE_DIR)
   SET(MKL_FOUND true)
-else()
+ELSE()
   FIND_PATH(MKL_INCLUDE_DIR mkl.h ${MKL_HOME} ${MKL_HOME}/include $ENV{MKL_HOME} $ENV{MKL_HOME}/include)
   FIND_PATH(MKL_LINK_DIR libmkl_core.a ${MKL_HOME} ${MKL_HOME}/lib/intel64  $ENV{MKL_HOME} $ENV{MKL_HOME}/lib/intel64)
-  if(MKL_INCLUDE_DIR)
+  IF(MKL_INCLUDE_DIR)
     SET(MKL_FOUND true)
-  endif()
-endif()
-if(MKL_FOUND)
-  SET(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m mkl_scalapack_lp64 mkl_blacs_intelmpi_lp64 )
-endif()
-
-INCLUDE_DIRECTORIES(${CODE_TEST_SOURCE_DIR}/src)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR} ${Boost_INCLUDE_DIR}/system ${Boost_INCLUDE_DIR}/timer)
-#INCLUDE_DIRECTORIES(${MPI_INCLUDE_DIR})
-
-
+  ENDIF()
+ENDIF()
+IF(MKL_FOUND)
+  SET(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m mkl_scalapack_lp64 mkl_blacs_intelmpi_lp64)
+  #SET(MKL_LIBS "-L$ENV{MKL_HOME};mkl_intel_lp64;mkl_sequential;mkl_core")
+ENDIF()
 LINK_DIRECTORIES(${MKL_LINK_DIR})
-#LINK_DIRECTORIES(${MPI_LINK_DIR})
-LINK_DIRECTORIES(${Boost_LINK_DIR})
 
-SUBDIRS(src)
+# find armadillo
+SET(ARMADILLO_INCLUDE_DIRS $ENV{ARMA_HOME}/include)
+SET(ARMADILLO_LIBRARY_DIRS $ENV{ARMA_HOME}/lib64)
+SET(ARMADILLO_LIBRARIES armadillo)
+INCLUDE_DIRECTORIES(${ARMADILLO_INCLUDE_DIRS})
+LINK_DIRECTORIES(${ARMADILLO_LIBRARY_DIRS})
+
+SET (ARMADILLO_TEST_SRCS src/armadillo_test.cpp
+  src/Communication/Communication.cpp src/MPITests.cpp)
+ADD_EXECUTABLE(armadillo_test ${ARMADILLO_TEST_SRCS})
+TARGET_LINK_LIBRARIES(armadillo_test ${MKL_LIBS} ${ARMADILLO_LIBRARIES})
+
+INSTALL(TARGETS armadillo_test DESTINATION ${ARMADILLO_TEST_SOURCE_DIR}/bin)

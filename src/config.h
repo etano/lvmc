@@ -1,18 +1,18 @@
 #ifndef CONFIG
 #define CONFIG
 
+#include <armadillo>
 #include <cstring>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/property_tree/ptree.hpp>
-// #include <boost/random.hpp>
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <assert.h>
 
-namespace ublas = boost::numeric::ublas;
-
+#ifdef USE_MPI
+#include <mpi.h>
+#endif
 
 using namespace std;
-
 
 #if PRECISION==double
 typedef double RealType;
@@ -20,14 +20,11 @@ typedef double RealType;
 typedef float RealType;
 #endif
 
-typedef ublas::matrix<RealType>  Tmatrix;
-typedef ublas::vector<RealType>  Tvector;
+typedef arma::Mat<RealType> Tmatrix;
+typedef arma::Col<RealType> Tvector;
 
 typedef int I;
-typedef ublas::matrix<I>  Imatrix;
-typedef ublas::vector<I>  Ivector;
+typedef arma::Mat<I> Imatrix;
+typedef arma::Col<I> Ivector;
 
-// typedef boost::mt19937 RNGType;
-
-//
 #endif
