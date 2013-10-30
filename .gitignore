@@ -16,3 +16,7 @@
 ._*
 .*swp
 build/*
+*.btr
+*.core
+
+bin
