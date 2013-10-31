@@ -45,9 +45,9 @@ struct parameter
 };
 
 struct control_block
-{ 
+{
     enum{silent=0, essential, chatty, debug};
-  
+
     prop_tree::ptree pt;
     std::string infile_name;
     std::string outfile_name;
@@ -55,37 +55,37 @@ struct control_block
 // General controls
     int verbosity;
     std::vector<int> p_grid;
-    
-// for optimization    
+
+// for optimization 
     bool opt;
     RealType ftol,xtol;
-    
+
 // for GAP function
     std::vector<RealType> f_parameters;
     RealType f_exp;
-    
+
 // for Configurations
     std::string conf_file;
     int n_test, n_train;
-    
+
     control_block(const string& iname): infile_name(iname), outfile_name("default_out.xml"), verbosity(0), 
                      opt(false), ftol(0.01), xtol(0.01), f_exp(2.0), conf_file("test.xyz"), n_test(100), n_train(100)
     {
       p_grid.resize(2,1);
     };
-    
+
     void read()
     {
       xmlparser::read(infile_name, pt);
-      
+
       verbosity=pt.get<int>("control.verbosity");
       std::cout<< "Verbosity: " << verbosity <<std::endl;
-      
+
       p_grid[0]=pt.get<int>("control.parallel.nc");
       p_grid[1]=pt.get<int>("control.parallel.nr");
       if(verbosity>1)
         std::cout<<p_grid[0]<<" "<<p_grid[1]<<std::endl;
-        
+
       f_exp=pt.get<RealType>("control.function.exp");
       if(verbosity>1)
         std::cout<<f_exp<<std::endl;
@@ -99,26 +99,25 @@ struct control_block
         std::ostream_iterator<RealType>(std::cout, "  "));
         std::cout<<std::endl;
       }
-        
 
       ftol=pt.get<RealType>("control.opt.ftol");
       xtol=pt.get<RealType>("control.opt.xtol");
       opt=pt.get<bool>("control.opt.on");
       if( (verbosity>1) and opt )
         std::cout<<xtol<<" "<<ftol<<std::endl;
-      
+
       n_train=pt.get<int>("control.configurations.train");
       n_test=pt.get<int>("control.configurations.test");
       conf_file=pt.get<string>("control.configurations.file");
       if(verbosity>1)
         std::cout<< conf_file <<" "<<n_test<<" "<<n_train<<std::endl;
-      
+
       outfile_name=pt.get<string>("control.output");
       if(verbosity>1)
         std::cout<< outfile_name <<std::endl;
-      
+
     };
-    
+
     void write(const string& oname)
     {
       outfile_name=oname;
@@ -128,21 +127,21 @@ struct control_block
 
 namespace boost {
   namespace serialization {
-        
+
     template<class Archive, class T>
     void serialize(Archive & ar, parameterset<T> & pms, const unsigned int version)
     {
             ar & pms.name;
             ar & pms.param;
     }
-    
+
     template<class Archive, class T>
     void serialize(Archive & ar, parameter<T> & pm, const unsigned int version)
     {
             ar & pm.name;
             ar & pm.param;
     }
-    
+
     template<class Archive>
     void serialize(Archive & ar, control_block & cb, const unsigned int version)
     {

@@ -2,6 +2,8 @@
 #define COMMUNICATION_H
 
 #include "../config.h"
+#include <cstdint>
+
 
 namespace COMM
 {
@@ -29,6 +31,62 @@ namespace COMM
   {
     MPI_Barrier(MPI_COMM_WORLD);
   }
+
+  // Template to retrieve traits of any MPI object
+  template <class T>
+  struct mpi_type_traits {
+    typedef T element_type;
+    typedef T* element_addr_type;
+    static inline MPI_Datatype get_type(T&& val);
+    static inline size_t get_size(T& val);
+    static inline void* get_addr(T& val);
+  };
+
+  // Specialization of mpi_type_traits for primitive types
+#define PRIMITIVE(Type, MpiType) \
+        template<> \
+        inline MPI_Datatype mpi_type_traits<Type>::get_type(Type&&) { return MpiType; } \
+        inline size_t mpi_type_traits<Type>::get_size(Type&) { return 1; } \
+        inline void* mpi_type_traits<Type>::get_addr(Type& val) { return &val; }
+  PRIMITIVE(char, MPI::CHAR);
+  PRIMITIVE(wchar_t, MPI::WCHAR);
+  PRIMITIVE(short, MPI::SHORT);
+  PRIMITIVE(int, MPI::INT);
+  PRIMITIVE(long, MPI::LONG);
+  PRIMITIVE(signed char, MPI::SIGNED_CHAR);
+  PRIMITIVE(unsigned char, MPI::UNSIGNED_CHAR);
+  PRIMITIVE(unsigned short, MPI::UNSIGNED_SHORT);
+  PRIMITIVE(unsigned int, MPI::UNSIGNED);
+  PRIMITIVE(unsigned long, MPI::UNSIGNED_LONG);
+  PRIMITIVE(unsigned long long, MPI::UNSIGNED_LONG_LONG);
+  PRIMITIVE(bool, MPI::BOOL);
+  PRIMITIVE(std::complex<float>, MPI::COMPLEX);
+  PRIMITIVE(std::complex<double>, MPI::DOUBLE_COMPLEX);
+  PRIMITIVE(std::complex<long double>, MPI::LONG_DOUBLE_COMPLEX);
+#if PRECISION==double
+  PRIMITIVE(RealType, MPI::DOUBLE);
+#elif PRECISION==single
+  PRIMITIVE(RealType, MPI::FLOAT);
+#endif
+
+#undef PRIMITIVE
+
+  // Specialization of mpi_type_traits for armadillo types
+#define ARMATYPE(Type, ElemType, MpiType) \
+        template<> \
+        inline MPI_Datatype mpi_type_traits<Type>::get_type(Type&&) { return MpiType; } \
+        inline size_t mpi_type_traits<Type>::get_size(Type& val) { return val.size(); } \
+        inline void* mpi_type_traits<Type>::get_addr(Type& val) { return val.memptr(); }
+  ARMATYPE(Imatrix, int, MPI::INT);
+  ARMATYPE(Ivector, int, MPI::INT);
+#if PRECISION==double
+  ARMATYPE(Tmatrix, RealType, MPI::DOUBLE);
+  ARMATYPE(Tvector, RealType, MPI::DOUBLE);
+#elif PRECISION==single
+  ARMATYPE(Tmatrix, RealType, MPI::FLOAT);
+  ARMATYPE(Tvector, RealType, MPI::FLOAT);
+#endif
+#undef ARMATYPE
 
 #else // Serial version
   inline void Init (int argc, char **argv) {}
@@ -62,37 +120,109 @@ public:
   void Split(int color, CommunicatorClass &newComm);
   void Subset(Imatrix &ranks, CommunicatorClass &newComm);
 
-  // Sends
-  int Send (int toProc, Tmatrix &buff);
-  int Send (int toProc, Tvector &buff);
-  int Send (int toProc, Imatrix &buff);
-  int Send (int toProc, Ivector &buff);
-  int Send (int toProc, RealType val);
-  int Send (int toProc, int val);
+  /// Gets for MPI traits
+  // Get type
+  template <class T>
+  inline MPI_Datatype GetMPIDatatype(T &val) { return COMM::mpi_type_traits<T>::get_type(val); }
+  // Get address of first element
+  template <class T>
+  inline void* GetMPIAddr(T &val) { return COMM::mpi_type_traits<T>::get_addr(val); }
+  // Get size of whole object
+  template <class T>
+  inline size_t GetMPISize(T &val) { return COMM::mpi_type_traits<T>::get_size(val); }
 
-  // Receives
-  int Receive (int fromProc, Tmatrix &buff);
-  int Receive (int fromProc, Tvector &buff);
-  int Receive (int fromProc, Imatrix &buff);
-  int Receive (int fromProc, Ivector &buff);
-  int Receive (int fromProc, RealType &val);
-  int Receive (int fromProc, int &val);
+  // Send
+  template<class T>
+  inline int Send(int toProc, T &val)
+  {
+    return MPI_Send(GetMPIAddr(val), GetMPISize(val), GetMPIDatatype(val), toProc, 0, MPIComm);
+  }
 
-  // Sendrecvs
-  int SendReceive (int fromProc, Tmatrix &fromBuff, int toProc, Tmatrix &toBuff);
-  int SendReceive (int fromProc, Tvector &fromBuff, int toProc, Tvector &toBuff);
-  int SendReceive (int fromProc, Imatrix &fromBuff, int toProc, Imatrix &toBuff);
-  int SendReceive (int fromProc, Ivector &fromBuff, int toProc, Ivector &toBuff);
-  int SendReceive (int fromProc, RealType &fromBuff, int toProc, RealType &toBuff);
-  int SendReceive (int fromProc, int &fromBuff, int toProc, int &toBuff);
+  // Receive
+  template<class T>
+  inline int Receive(int fromProc, T &val)
+  {
+    return MPI_Recv(GetMPIAddr(val), GetMPISize(val), GetMPIDatatype(val), fromProc, 0, MPIComm, MPI_STATUS_IGNORE);
+  }
 
-  // Broadcasts
+  // Sendrecv
+  template<class T>
+  inline int SendReceive (int fromProc, T &fromBuff, int toProc, T &toBuff)
+  {
+    return MPI_Sendrecv(GetMPIAddr(fromBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff), fromProc, 1,
+                        GetMPIAddr(toBuff), GetMPISize(toBuff), GetMPIDatatype(toBuff), toProc, 1, MPIComm, MPI_STATUS_IGNORE);
+  }
 
-  // Sums
+  // Broadcast
+  template<class T>
+  inline int Broadcast(int fromProc, T &val)
+  {
+    return MPI_Bcast(GetMPIAddr(val), GetMPISize(val), GetMPIDatatype(val), fromProc, MPIComm);
+  }
 
-  // Gathers
+  // Reduce
+  template<class T>
+  inline int Reduce(int toProc, T &fromBuff, T &toBuff, MPI_Op Op)
+  {
+    return MPI_Reduce(GetMPIAddr(fromBuff), GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
+                      Op, toProc, MPIComm);
+  }
 
-  // AllGathers
+  // AllReduce
+  template<class T>
+  inline int AllReduce(int toProc, T &fromBuff, T &toBuff, MPI_Op Op)
+  {
+    return MPI_Reduce(GetMPIAddr(fromBuff), GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
+                      Op, MPIComm);
+  }
+
+  // Sum
+  template<class T>
+  inline int Sum(int toProc, T &fromBuff, T &toBuff)
+  {
+    return Reduce(toProc,fromBuff,toBuff,MPI_SUM);
+  }
+
+  // AllSum
+  template<class T>
+  inline int AllSum(int toProc, T &fromBuff, T &toBuff)
+  {
+    return AllReduce(toProc,fromBuff,toBuff,MPI_SUM);
+  }
+
+  // Product
+  template<class T>
+  inline int Product(int toProc, T &fromBuff, T &toBuff)
+  {
+    return Reduce(toProc,fromBuff,toBuff,MPI_PROD);
+  }
+
+  // AllProduct
+  template<class T>
+  inline int AllProduct(int toProc, T &fromBuff, T &toBuff)
+  {
+    return AllReduce(toProc,fromBuff,toBuff,MPI_PROD);
+  }
+
+  // Gather
+  template<class T>
+  inline int Gather(int toProc, T &fromBuff, T &toBuff)
+  {
+    assert(NumProcs()*GetMPISize(fromBuff) == GetMPISize(toBuff));
+    return MPI_Gather(GetMPIAddr(fromBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
+                      GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(toBuff), toProc, MPIComm);
+  }
+
+  // AllGather
+  template<class T>
+  inline int AllGather(T &fromBuff, T &toBuff)
+  {
+    assert(NumProcs()*GetMPISize(fromBuff) == GetMPISize(toBuff));
+    return MPI_Gather(GetMPIAddr(fromBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
+                      GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(toBuff), MPIComm);
+  }
+
+  // AllGatherCols
   int AllGatherCols (Tmatrix &buff);
 
   CommunicatorClass()
