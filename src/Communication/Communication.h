@@ -208,18 +208,85 @@ public:
   template<class T>
   inline int Gather(int toProc, T &fromBuff, T &toBuff)
   {
-    assert(NumProcs()*GetMPISize(fromBuff) == GetMPISize(toBuff));
     return MPI_Gather(GetMPIAddr(fromBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
                       GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(toBuff), toProc, MPIComm);
+  }
+
+  // Gatherv
+  template<class T>
+  inline int Gatherv(int toProc, T &fromBuff, T &toBuff, int* recvCounts, int* displacements)
+  {
+     return MPI_Gatherv(GetMPIAddr(fromBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
+                        GetMPIAddr(toBuff), recvCounts, displacements, GetMPIDatatype(toBuff), toProc, MPIComm);
+  }
+
+  // GatherCols
+  template<class T>
+  int GatherCols(int toProc, T &fromBuff, T &toBuff)
+  {
+    int nProcs = NumProcs();
+    int myProc = MyProc();
+    int rows = fromBuff.n_rows;
+    int cols = fromBuff.n_cols;
+    int displacements[nProcs];
+    int recvCounts[nProcs];
+    int currCol = 0;
+    for (int proc=0; proc<nProcs; proc++) {
+      int procCols = cols/nProcs + ((cols%nProcs)>proc);
+      displacements[proc] = rows*currCol;
+      recvCounts[proc] = rows*procCols;
+      if (proc == myProc) {
+        toBuff.set_size(rows,procCols);
+      }
+      currCol += procCols;
+    }
+    return Gather(toProc, fromBuff, toBuff, recvCounts, displacements);
   }
 
   // AllGather
   template<class T>
   inline int AllGather(T &fromBuff, T &toBuff)
   {
-    assert(NumProcs()*GetMPISize(fromBuff) == GetMPISize(toBuff));
     return MPI_Gather(GetMPIAddr(fromBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
                       GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(toBuff), MPIComm);
+  }
+
+  // Scatter
+  template<class T>
+  inline int Scatter(int fromProc, T &fromBuff, T &toBuff)
+  {
+    return MPI_Scatter(GetMPIAddr(fromBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
+                       GetMPIAddr(toBuff), GetMPISize(toBuff), GetMPIDatatype(toBuff), fromProc, MPIComm);
+  }
+
+  // Scatter
+  template<class T>
+  inline int Scatterv(int fromProc, T &fromBuff, T &toBuff, int* sendCounts, int* displacements)
+  {
+     return MPI_Scatterv(GetMPIAddr(fromBuff), sendCounts, displacements, GetMPIDatatype(fromBuff),
+                         GetMPIAddr(toBuff), GetMPISize(toBuff), GetMPIDatatype(toBuff), fromProc, MPIComm);
+  }
+
+  // ScatterCols
+  template<class T>
+  int ScatterCols(int fromProc, T &fromBuff, T &toBuff)
+  {
+    int nProcs = NumProcs();
+    int myProc = MyProc();
+    int rows = fromBuff.n_rows;
+    int cols = fromBuff.n_cols;
+    int displacements[nProcs];
+    int sendCounts[nProcs];
+    int currCol = 0;
+    for (int proc=0; proc<nProcs; proc++) {
+      int procCols = cols/nProcs + ((cols%nProcs)>proc);
+      displacements[proc] = rows*currCol;
+      sendCounts[proc] = rows*procCols;
+      if (proc == myProc)
+        toBuff.set_size(rows,procCols);
+      currCol += procCols;
+    }
+    return Scatterv(fromProc, fromBuff, toBuff, sendCounts, displacements);
   }
 
   // AllGatherCols

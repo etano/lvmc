@@ -7,6 +7,32 @@ void ReturnSync() {
   COMM::BarrierSync();
 }
 
+void TestInverse(CommunicatorClass &MyComm) {
+  int myProc = MyComm.MyProc();
+  int n = 4;
+
+  // Set up initial matrices
+  Tmatrix A = arma::randu<Tmatrix>(n,n);
+  MyComm.Broadcast(0,A);
+  Tmatrix In = arma::eye<Tmatrix>(n,n);
+
+  // Divide up problem
+  Tmatrix B;
+  MyComm.ScatterCols(0,In,B);
+
+  // Compute partial inverses
+  Tmatrix X = arma::solve(A,B);
+
+  // Gather full inverse
+  Tmatrix AI = arma::zeros<Tmatrix>(n,n);
+  MyComm.Gather(0,X,AI);
+  if (myProc == 0 && abs(arma::accu(A*AI-In)) < 1e-9) {
+    cout << "Inverse test ... passed." << endl;
+  }
+
+  ReturnSync();
+}
+
 void TestAllGatherCols(CommunicatorClass &MyComm) {
   int myProc = MyComm.MyProc();
   int nProcs = MyComm.NumProcs();

@@ -54,8 +54,12 @@ void CommunicatorClass::Subset(Imatrix &ranks, CommunicatorClass &newComm)
   MPI_Comm_create(MPIComm, newGroup, &(newComm.MPIComm));
 }
 
-/// AllGathers
-
+/** Gathers vectors from subprocesses and puts them in a matrix
+ * @param toProc ID for receiving processor
+ * @param fromBuff Reference to sending vector
+ * @param toBuff Reference to receiving matrix
+ * return the MPI status
+ */
 int CommunicatorClass::AllGatherCols(Tmatrix &buff)
 {
   int nProcs = NumProcs();

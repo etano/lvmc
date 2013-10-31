@@ -39,6 +39,7 @@ int main(int argc, char** argv)
   WorldComm.BarrierSync(); // Sync procs within each clone.
 
   // Run MPI Tests
+  TestInverse(IntraComm);
   TestAllGatherCols(IntraComm);
   TestBroadcast(IntraComm);
   TestSendReceive(IntraComm);
