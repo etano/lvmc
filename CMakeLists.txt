@@ -17,22 +17,57 @@ SET(NDIM 2)
 #-------------------------------------------------------------------
 # Compilers
 #-------------------------------------------------------------------
-SET(C_FLAGS "-DH5_USE_16_API -O3 -msse3 -w -DNDIM=${NDIM}")
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
+  # set the compiler
+  IF(USE_MPI)
+    SET(CMAKE_C_COMPILER mpixlc_r)
+    SET(CMAKE_CXX_COMPILER mpixlcxx_r)
+  ELSE()
+    SET(CMAKE_C_COMPILER xlc_r)
+    SET(CMAKE_CXX_COMPILER xlc++_r)
+  ENDIF()
+
+  SET(AIX_ARCH "qp")
+  SET(AIX_ARCH_FLAGS "-qarch=${AIX_ARCH} -qstrict -qhot=level=1 -qtune=qp -qsimd=auto")
+  IF(USE_MPI)
+    SET(AIX_ARCH_FLAGS "${AIX_ARCH_FLAGS} -qsmp=omp -qthreaded")
+  ENDIF()
+
+  SET(AIX_CXX_COMMON_FLAGS "-qinline=auto:level=10")
+  SET(AIX_OPT_FLAGS "-qmaxmem=-1")
+
+  SET(CMAKE_CXX_FLAGS "${AIX_ARCH_FLAGS} ${AIX_CXX_COMMON_FLAGS} ${AIX_OPT_FLAGS}")
+  SET(CMAKE_C_FLAGS "${AIX_ARCH_FLAGS} ${AIX_OPT_FLAGS}")
+ENDIF()
+
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+  IF(USE_MPI)
+    SET(CMAKE_C_COMPILER mpicc)
+    SET(CMAKE_CXX_COMPILER mpicxx)
+  ELSE()
+    SET(CMAKE_C_COMPILER cc)
+    SET(CMAKE_CXX_COMPILER c++)
+  ENDIF()
+
+  SET(INTEL_C_FLAGS "-w")
+  IF(USE_MPI)
+    SET(INTEL_C_FLAGS "${INTEL_C_FLAGS} -fopenmp")
+  ENDIF(USE_MPI)
+
+  SET(CMAKE_CXX_FLAGS "${INTEL_C_FLAGS}")
+  SET(CMAKE_C_FLAGS "${INTEL_C_FLAGS}")
+ENDIF()
+
+SET(COMMON_FLAGS "-O3 -g -DNDIM=${NDIM}")
 IF(USE_MPI)
-  SET(C_FLAGS "${C_FLAGS} -DUSE_MPI -fopenmp")
+  SET(COMMON_FLAGS "${COMMON_FLAGS} -DUSE_MPI")
 ENDIF(USE_MPI)
 
-SET(CMAKE_CXX_COMPILER,"CC")
-SET(CMAKE_CXX_FLAGS "-std=c++0x ${C_FLAGS}")
-SET(CMAKE_CXX_SOURCE_FILE_EXTENSIONS ,"cc")
+SET(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} ${COMMON_FLAGS}")
+SET(CMAKE_CXX_SOURCE_FILE_EXTENSIONS ,"cpp")
 
-SET(CMAKE_C_COMPILER,"cc")
-SET(CMAKE_C_FLAGS "-std=c99 ${C_FLAGS}")
+SET(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
 SET(CMAKE_C_SOURCE_FILE_EXTENSIONS ,"c")
-
-SET(CMAKE_Fortran_COMPILER,"ftn")
-SET(CMAKE_Fortran_FLAGS "-funroll-loops -O3")
-SET(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS ,"f")
 
 IF(QMC_BUILD_STATIC)
   # Enable static linking
@@ -70,24 +105,38 @@ SET(BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
 SET(BOOST_INCLUDE_DIRS $ENV{BOOST_HOME}/include)
 INCLUDE_DIRECTORIES(${BOOST_INCLUDE_DIRS})
 
-# Find MKL
-FIND_PATH(MKL_INCLUDE_DIR mkl.h)
-FIND_PATH(MKL_LINK_DIR libmkl_core.a)
-SET(MKL_FOUND false)
-IF(MKL_INCLUDE_DIR)
-  SET(MKL_FOUND true)
+MESSAGE(STATUS "Using ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR}")
+SET(LAPACKLIBS "")
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
+  # Find Lapack/BLAS BGQ
+  SET(LAPACK_LIBRARY /usr/local/tools/lapack/lib/liblapack.a)
+  SET(BLAS_LIBRARY /usr/local/tools/essl/5.1/lib/libesslsmpbg.a -lessl)
+  SET(XLMASS_LIBRARY /opt/ibmcmp/xlmass/bg/7.3/bglib64/libmass.a -lmass
+                     /opt/ibmcmp/xlmass/bg/7.3/bglib64/libmassv.a -lmassv)
+  SET(LAPACK_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${XLMASS_LIBRARY})
 ELSE()
-  FIND_PATH(MKL_INCLUDE_DIR mkl.h ${MKL_HOME} ${MKL_HOME}/include $ENV{MKL_HOME} $ENV{MKL_HOME}/include)
-  FIND_PATH(MKL_LINK_DIR libmkl_core.a ${MKL_HOME} ${MKL_HOME}/lib/intel64  $ENV{MKL_HOME} $ENV{MKL_HOME}/lib/intel64)
-  IF(MKL_INCLUDE_DIR)
-    SET(MKL_FOUND true)
+  IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+    # Find MKL
+    FIND_PATH(MKL_INCLUDE_DIR mkl.h)
+    FIND_PATH(MKL_LINK_DIR libmkl_core.a)
+    SET(MKL_FOUND false)
+    IF(MKL_INCLUDE_DIR)
+      SET(MKL_FOUND true)
+    ELSE()
+      FIND_PATH(MKL_INCLUDE_DIR mkl.h ${MKL_HOME} ${MKL_HOME}/include $ENV{MKL_HOME} $ENV{MKL_HOME}/include)
+      FIND_PATH(MKL_LINK_DIR libmkl_core.a ${MKL_HOME} ${MKL_HOME}/lib/intel64  $ENV{MKL_HOME} $ENV{MKL_HOME}/lib/intel64)
+      IF(MKL_INCLUDE_DIR)
+        SET(MKL_FOUND true)
+      ENDIF()
+    ENDIF()
+    IF(MKL_FOUND)
+      SET(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m mkl_scalapack_lp64 mkl_blacs_intelmpi_lp64)
+      #SET(MKL_LIBS "-L$ENV{MKL_HOME};mkl_intel_lp64;mkl_sequential;mkl_core")
+    ENDIF()
+    LINK_DIRECTORIES(${MKL_LINK_DIR})
+    SET(LAPACK_LIBS ${MKL_LIBS})
   ENDIF()
 ENDIF()
-IF(MKL_FOUND)
-  SET(MKL_LIBS mkl_intel_lp64 mkl_intel_thread mkl_core iomp5 pthread m mkl_scalapack_lp64 mkl_blacs_intelmpi_lp64)
-  #SET(MKL_LIBS "-L$ENV{MKL_HOME};mkl_intel_lp64;mkl_sequential;mkl_core")
-ENDIF()
-LINK_DIRECTORIES(${MKL_LINK_DIR})
 
 # Find Armadillo
 SET(ARMA_INCLUDE_DIR $ENV{ARMA_HOME}/include)
@@ -101,7 +150,7 @@ SET (TEMPLATE_SRCS src/main.cpp
   src/Communication/Communication.cpp
   src/MPITests.cpp)
 ADD_EXECUTABLE(template ${TEMPLATE_SRCS})
-TARGET_LINK_LIBRARIES(template ${MKL_LIBS} ${ARMA_LIBS})
+TARGET_LINK_LIBRARIES(template ${LAPACK_LIBS} ${ARMA_LIBS})
 
 # Install to home directory
 INSTALL(TARGETS template DESTINATION $ENV{HOME}/bin)

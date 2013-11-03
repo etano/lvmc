@@ -46,7 +46,9 @@ namespace COMM
 #define PRIMITIVE(Type, MpiType) \
         template<> \
         inline MPI_Datatype mpi_type_traits<Type>::get_type(Type&&) { return MpiType; } \
+        template<> \
         inline size_t mpi_type_traits<Type>::get_size(Type&) { return 1; } \
+        template<> \
         inline void* mpi_type_traits<Type>::get_addr(Type& val) { return &val; }
   PRIMITIVE(char, MPI::CHAR);
   PRIMITIVE(wchar_t, MPI::WCHAR);
@@ -75,7 +77,9 @@ namespace COMM
 #define ARMATYPE(Type, ElemType, MpiType) \
         template<> \
         inline MPI_Datatype mpi_type_traits<Type>::get_type(Type&&) { return MpiType; } \
+        template<> \
         inline size_t mpi_type_traits<Type>::get_size(Type& val) { return val.size(); } \
+        template<> \
         inline void* mpi_type_traits<Type>::get_addr(Type& val) { return val.memptr(); }
   ARMATYPE(Imatrix, int, MPI::INT);
   ARMATYPE(Ivector, int, MPI::INT);
