@@ -1,0 +1,8 @@
+<Input>
+  <IO>
+    <OutputPrefix>test</OutputPrefix>
+  </IO>
+  <Parallel>
+    <ProcsPerClone>2</ProcsPerClone>
+  </Parallel>
+</Input>
