@@ -11,13 +11,14 @@ SET(CMAKE_VERBOSE_MAKEFILE OFF)
 
 SET(PRECISION double) #double float
 SET(USE_MPI TRUE)
-SET(QMC_BUILD_STATIC FALSE)
+SET(QMC_BUILD_STATIC TRUE)
 SET(NDIM 2)
+SET(COMPILER_MAKE "GNU") # INTEL, GNU, or IBM
 
 #-------------------------------------------------------------------
 # Compilers
 #-------------------------------------------------------------------
-IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
+IF(${COMPILER_MAKE} MATCHES "IBM")
   # set the compiler
   IF(USE_MPI)
     SET(CMAKE_C_COMPILER mpixlc_r)
@@ -40,13 +41,13 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
   SET(CMAKE_C_FLAGS "${AIX_ARCH_FLAGS} ${AIX_OPT_FLAGS}")
 ENDIF()
 
-IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+IF(${COMPILER_MAKE} MATCHES "INTEL")
   IF(USE_MPI)
-    SET(CMAKE_C_COMPILER mpicc)
-    SET(CMAKE_CXX_COMPILER mpicxx)
+    SET(CMAKE_C_COMPILER mpiicc)
+    SET(CMAKE_CXX_COMPILER mpiicpc)
   ELSE()
-    SET(CMAKE_C_COMPILER cc)
-    SET(CMAKE_CXX_COMPILER c++)
+    SET(CMAKE_C_COMPILER icc)
+    SET(CMAKE_CXX_COMPILER icpc)
   ENDIF()
 
   SET(INTEL_C_FLAGS "-w")
@@ -56,6 +57,24 @@ IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
 
   SET(CMAKE_CXX_FLAGS "${INTEL_C_FLAGS}")
   SET(CMAKE_C_FLAGS "${INTEL_C_FLAGS}")
+ENDIF()
+
+IF(${COMPILER_MAKE} MATCHES "GNU")
+  IF(USE_MPI)
+    SET(CMAKE_C_COMPILER mpicc)
+    SET(CMAKE_CXX_COMPILER mpicxx)
+  ELSE()
+    SET(CMAKE_C_COMPILER cc)
+    SET(CMAKE_CXX_COMPILER c++)
+  ENDIF()
+
+  SET(GNU_C_FLAGS "-w")
+  IF(USE_MPI)
+    SET(GNU_C_FLAGS "${GNU_C_FLAGS} -fopenmp")
+  ENDIF(USE_MPI)
+
+  SET(CMAKE_CXX_FLAGS "${GNU_C_FLAGS}")
+  SET(CMAKE_C_FLAGS "${GNU_C_FLAGS}")
 ENDIF()
 
 SET(COMMON_FLAGS "-O3 -g -DNDIM=${NDIM}")
@@ -105,17 +124,24 @@ SET(BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
 SET(BOOST_INCLUDE_DIRS $ENV{BOOST_HOME}/include)
 INCLUDE_DIRECTORIES(${BOOST_INCLUDE_DIRS})
 
-MESSAGE(STATUS "Using ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR}")
 SET(LAPACKLIBS "")
-IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc")
+IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc") # This covers GNU and IBM Compilers on BGQ
   # Find Lapack/BLAS BGQ
   SET(LAPACK_LIBRARY /usr/local/tools/lapack/lib/liblapack.a)
-  SET(BLAS_LIBRARY /usr/local/tools/essl/5.1/lib/libesslsmpbg.a -lessl)
-  SET(XLMASS_LIBRARY /opt/ibmcmp/xlmass/bg/7.3/bglib64/libmass.a -lmass
-                     /opt/ibmcmp/xlmass/bg/7.3/bglib64/libmassv.a -lmassv)
-  SET(LAPACK_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${XLMASS_LIBRARY})
+  SET(BLAS_LIBRARY /usr/local/tools/blas/lib/libblas.a)
+  SET(ESSL_LIBRARY /usr/local/tools/essl/5.1/lib/libesslsmpbg.a)
+  SET(XLMASS_LIBRARY /opt/ibmcmp/xlmass/bg/7.3/bglib64/libmass.a
+                     /opt/ibmcmp/xlmass/bg/7.3/bglib64/libmassv.a)
+  SET(FORTRAN_LIBRARY /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlf90_r.a
+                      /opt/ibmcmp/xlf/bg/14.1/bglib64/libxl.a
+                      /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlfmath.a
+                      /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlfpmt4.a
+                      /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlfpmt8.a
+                      /opt/ibmcmp/xlf/bg/14.1/bglib64/libxlopt.a)
+  SET(LAPACK_LIBS ${LAPACK_LIBRARY} ${BLAS_LIBRARY} ${ESSL_LIBRARY}
+    ${XLMASS_LIBRARY} ${FORTRAN_LIBRARY} -ldl)
 ELSE()
-  IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+  IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "INTEL")
     # Find MKL
     FIND_PATH(MKL_INCLUDE_DIR mkl.h)
     FIND_PATH(MKL_LINK_DIR libmkl_core.a)
