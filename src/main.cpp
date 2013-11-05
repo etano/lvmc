@@ -54,6 +54,22 @@ int main(int argc, char** argv)
   cin.ignore();
   WorldComm.BarrierSync(); // Sync procs within each clone.
 
+  if (myWorldProc == 0) {
+    H5::H5File file("test.h5", H5F_ACC_TRUNC);
+    IOClass IOHDF5;
+    IOHDF5.CreateGroup(file, "Data");
+    Tmatrix A = arma::randu<Tmatrix>(3,2);
+    cout << A << endl;
+    IOHDF5.CreateExtendableDataSet(file, "/Data/", "test", A);
+    Tmatrix B = arma::randu<Tmatrix>(3,2);
+    cout << B << endl;
+    IOHDF5.AppendDataSet(file, "/Data/", "test", B);
+  }
+  cin.ignore();
+  WorldComm.BarrierSync(); // Sync procs within each clone.
+
+
+
   // Run MPI Tests
   TestInverse(IntraComm);
   TestAllGatherCols(IntraComm);

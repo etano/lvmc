@@ -8,7 +8,6 @@ namespace IO {
   // Template to retrieve traits of any HDF5 object
   template <class T>
   struct hdf5_type_traits {
-    //static inline hid_t get_type(T&& val);
     static H5::PredType get_type(T&& val);
     static inline size_t get_size(T& val);
     static inline void* get_addr(T& val);
@@ -57,7 +56,7 @@ namespace IO {
         template<> \
         inline void* hdf5_type_traits<Type>::get_addr(Type& val) { return val.memptr(); } \
         template<> \
-        inline const hsize_t* hdf5_type_traits<Type>::get_shape(Type& val) { const hsize_t shape[] = {val.n_rows,val.n_cols}; return shape; } \
+        inline const hsize_t* hdf5_type_traits<Type>::get_shape(Type& val) { const hsize_t shape[] = {val.n_cols,val.n_rows}; return shape; } \
         template<> \
         inline const int hdf5_type_traits<Type>::get_rank(Type& val) { return 2; }
   ARMATYPE(Imatrix, int, H5::IntType, H5::PredType::NATIVE_INT);
