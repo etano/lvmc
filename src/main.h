@@ -5,6 +5,7 @@
 #include "config.h"
 #include "Communication/Communication.h"
 #include "IO/InputFile.h"
+#include "IO/IO.h"
 #include "MPITests.h"
 
 #endif
