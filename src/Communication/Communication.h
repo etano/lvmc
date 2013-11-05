@@ -35,8 +35,6 @@ namespace COMM
   // Template to retrieve traits of any MPI object
   template <class T>
   struct mpi_type_traits {
-    typedef T element_type;
-    typedef T* element_addr_type;
     static inline MPI_Datatype get_type(T&& val);
     static inline size_t get_size(T& val);
     static inline void* get_addr(T& val);
