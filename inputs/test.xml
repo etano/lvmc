@@ -3,6 +3,6 @@
     <OutputPrefix>test</OutputPrefix>
   </IO>
   <Parallel>
-    <ProcsPerClone>2</ProcsPerClone>
+    <ProcsPerGroup>2</ProcsPerGroup>
   </Parallel>
 </Input>

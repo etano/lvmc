@@ -2,7 +2,7 @@ PROJECT(ARMA_TEST)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-#if you don't want the full compiler output, remove the following line
+#if you don't want the full compiler output, set to "OFF"
 SET(CMAKE_VERBOSE_MAKEFILE OFF)
 
 #-------------------------------------------------------------------
@@ -11,6 +11,7 @@ SET(CMAKE_VERBOSE_MAKEFILE OFF)
 
 SET(PRECISION double) #double float
 SET(USE_MPI TRUE)
+SET(USE_OPENMP TRUE)
 SET(QMC_BUILD_STATIC FALSE)
 SET(NDIM 2)
 SET(COMPILER_MAKE "INTEL") # INTEL, GNU, or IBM
@@ -30,7 +31,7 @@ IF(${COMPILER_MAKE} MATCHES "IBM")
 
   SET(AIX_ARCH "qp")
   SET(AIX_ARCH_FLAGS "-qarch=${AIX_ARCH} -qstrict -qhot=level=1 -qtune=qp -qsimd=auto")
-  IF(USE_MPI)
+  IF(USE_OPENMP)
     SET(AIX_ARCH_FLAGS "${AIX_ARCH_FLAGS} -qsmp=omp -qthreaded")
   ENDIF()
 
@@ -51,9 +52,9 @@ IF(${COMPILER_MAKE} MATCHES "INTEL")
   ENDIF()
 
   SET(INTEL_C_FLAGS "-w")
-  IF(USE_MPI)
+  IF(USE_OPENMP)
     SET(INTEL_C_FLAGS "${INTEL_C_FLAGS} -fopenmp")
-  ENDIF(USE_MPI)
+  ENDIF(USE_OPENMP)
 
   SET(CMAKE_CXX_FLAGS "${INTEL_C_FLAGS}")
   SET(CMAKE_C_FLAGS "${INTEL_C_FLAGS}")
@@ -69,9 +70,9 @@ IF(${COMPILER_MAKE} MATCHES "GNU")
   ENDIF()
 
   SET(GNU_C_FLAGS "-w")
-  IF(USE_MPI)
+  IF(USE_OPENMP)
     SET(GNU_C_FLAGS "${GNU_C_FLAGS} -fopenmp")
-  ENDIF(USE_MPI)
+  ENDIF(USE_OPENMP)
 
   SET(CMAKE_CXX_FLAGS "${GNU_C_FLAGS}")
   SET(CMAKE_C_FLAGS "${GNU_C_FLAGS}")
@@ -81,6 +82,9 @@ SET(COMMON_FLAGS "-O3 -g -DNDIM=${NDIM}")
 IF(USE_MPI)
   SET(COMMON_FLAGS "${COMMON_FLAGS} -DUSE_MPI")
 ENDIF(USE_MPI)
+IF(USE_OPENMP)
+  SET(COMMON_FLAGS "${COMMON_FLAGS} -DUSE_OPENMP")
+ENDIF(USE_OPENMP)
 
 SET(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS} ${COMMON_FLAGS}")
 SET(CMAKE_CXX_SOURCE_FILE_EXTENSIONS ,"cpp")
@@ -182,7 +186,14 @@ LINK_DIRECTORIES(${HDF5_LIB_DIR})
 # Create target
 SET (TEMPLATE_SRCS src/main.cpp
   src/Communication/Communication.cpp
-  src/MPITests.cpp)
+  src/IO/InputFile.cpp
+  src/SimulationClass.cpp
+  src/MPITests.cpp
+  src/RNG/RNG.cpp
+  src/RNG/sfmt.cpp
+  src/RNG/mersenne.cpp
+  src/RNG/userintf.cpp
+  src/RNG/stoc1.cpp)
 ADD_EXECUTABLE(template ${TEMPLATE_SRCS})
 TARGET_LINK_LIBRARIES(template ${LAPACK_LIBS} ${ARMA_LIBS} ${HDF5_LIBS})
 

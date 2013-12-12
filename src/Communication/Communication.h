@@ -60,13 +60,12 @@ namespace COMM
   PRIMITIVE(unsigned long, MPI::UNSIGNED_LONG);
   PRIMITIVE(unsigned long long, MPI::UNSIGNED_LONG_LONG);
   PRIMITIVE(bool, MPI::BOOL);
-  PRIMITIVE(std::complex<float>, MPI::COMPLEX);
-  PRIMITIVE(std::complex<double>, MPI::DOUBLE_COMPLEX);
-  PRIMITIVE(std::complex<long double>, MPI::LONG_DOUBLE_COMPLEX);
 #if PRECISION==double
   PRIMITIVE(RealType, MPI::DOUBLE);
+  PRIMITIVE(ComplexType, MPI::DOUBLE_COMPLEX);
 #elif PRECISION==single
   PRIMITIVE(RealType, MPI::FLOAT);
+  PRIMITIVE(ComplexType, MPI::COMPLEX);
 #endif
 
 #undef PRIMITIVE
@@ -84,9 +83,13 @@ namespace COMM
 #if PRECISION==double
   ARMATYPE(Tmatrix, RealType, MPI::DOUBLE);
   ARMATYPE(Tvector, RealType, MPI::DOUBLE);
+  ARMATYPE(Cmatrix, ComplexType, MPI::DOUBLE_COMPLEX);
+  ARMATYPE(Cvector, ComplexType, MPI::DOUBLE_COMPLEX);
 #elif PRECISION==single
   ARMATYPE(Tmatrix, RealType, MPI::FLOAT);
   ARMATYPE(Tvector, RealType, MPI::FLOAT);
+  ARMATYPE(Cmatrix, ComplexType, MPI::COMPLEX);
+  ARMATYPE(Cvector, ComplexType, MPI::COMPLEX);
 #endif
 #undef ARMATYPE
 
@@ -111,7 +114,13 @@ public:
 class CommunicatorClass
 {
 public:
-#ifdef USE_MPI // Parallel version
+
+  CommunicatorClass()
+  {
+    SetWorld();
+  }
+
+#if USE_MPI // Parallel version
   MPI_Comm MPIComm;
 
   void SetWorld(); // Sets this communicator to be that of all the processes (i.e. MPI_WORLD)
@@ -172,9 +181,9 @@ public:
 
   // AllReduce
   template<class T>
-  inline int AllReduce(int toProc, T &fromBuff, T &toBuff, MPI_Op Op)
+  inline int AllReduce(T &fromBuff, T &toBuff, MPI_Op Op)
   {
-    return MPI_Reduce(GetMPIAddr(fromBuff), GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
+    return MPI_Allreduce(GetMPIAddr(fromBuff), GetMPIAddr(toBuff), GetMPISize(fromBuff), GetMPIDatatype(fromBuff),
                       Op, MPIComm);
   }
 
@@ -187,9 +196,9 @@ public:
 
   // AllSum
   template<class T>
-  inline int AllSum(int toProc, T &fromBuff, T &toBuff)
+  inline int AllSum(T &fromBuff, T &toBuff)
   {
-    return AllReduce(toProc,fromBuff,toBuff,MPI_SUM);
+    return AllReduce(fromBuff,toBuff,MPI_SUM);
   }
 
   // Product
@@ -201,9 +210,9 @@ public:
 
   // AllProduct
   template<class T>
-  inline int AllProduct(int toProc, T &fromBuff, T &toBuff)
+  inline int AllProduct(T &fromBuff, T &toBuff)
   {
-    return AllReduce(toProc,fromBuff,toBuff,MPI_PROD);
+    return AllReduce(fromBuff,toBuff,MPI_PROD);
   }
 
   // Gather
@@ -294,11 +303,6 @@ public:
   // AllGatherCols
   int AllGatherCols (Tmatrix &buff);
 
-  CommunicatorClass()
-  {
-    SetWorld();
-  }
-
 #else   // Serial version
   inline void SetWorld(){}
   inline int MyProc() {return 0;}
@@ -314,6 +318,37 @@ public:
     }
   }
 
+  template<class T>
+  inline int Send(int toProc, T &val) {}
+  template<class T>
+  inline int Receive(int fromProc, T &val) {}
+  template<class T>
+  inline int SendReceive (int fromProc, T &fromBuff, int toProc, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int Broadcast(int fromProc, T &val) {}
+  template<class T>
+  inline int Sum(int toProc, T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int AllSum(T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int Product(int toProc, T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int AllProduct(T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int Gather(int toProc, T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int Gatherv(int toProc, T &fromBuff, T &toBuff, int* recvCounts, int* displacements) {toBuff = fromBuff;}
+  template<class T>
+  inline int GatherCols(int toProc, T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int AllGather(T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int Scatter(int fromProc, T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  template<class T>
+  inline int Scatterv(int fromProc, T &fromBuff, T &toBuff, int* sendCounts, int* displacements) {toBuff = fromBuff;}
+  template<class T>
+  inline int ScatterCols(int fromProc, T &fromBuff, T &toBuff) {toBuff = fromBuff;}
+  inline int AllGatherCols (Tmatrix &buff) {}
 #endif
 };
 

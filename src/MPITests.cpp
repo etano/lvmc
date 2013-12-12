@@ -1,13 +1,13 @@
-#include "MPITests.h"
+#include "SimulationClass.h"
 
-void ReturnSync() {
+void Simulation::ReturnSync() {
   if (COMM::WorldProc() == 0)
     cout << "Hit return to continue..." << endl;
   cin.ignore();
   COMM::BarrierSync();
 }
 
-void TestInverse(CommunicatorClass &MyComm) {
+void Simulation::TestInverse(CommunicatorClass &MyComm) {
   int myProc = MyComm.MyProc();
   int n = 4;
 
@@ -33,7 +33,7 @@ void TestInverse(CommunicatorClass &MyComm) {
   ReturnSync();
 }
 
-void TestAllGatherCols(CommunicatorClass &MyComm) {
+void Simulation::TestAllGatherCols(CommunicatorClass &MyComm) {
   int myProc = MyComm.MyProc();
   int nProcs = MyComm.NumProcs();
   int nCols = 2*nProcs+2;
@@ -51,7 +51,7 @@ void TestAllGatherCols(CommunicatorClass &MyComm) {
   ReturnSync();
 }
 
-void TestBroadcast(CommunicatorClass &MyComm) {
+void Simulation::TestBroadcast(CommunicatorClass &MyComm) {
   int myProc = MyComm.MyProc();
 
   // int test
@@ -70,7 +70,7 @@ void TestBroadcast(CommunicatorClass &MyComm) {
   ReturnSync();
 }
 
-void TestSendReceive(CommunicatorClass &MyComm) {
+void Simulation::TestSendReceive(CommunicatorClass &MyComm) {
   int myProc = MyComm.MyProc();
 
   // int test
@@ -102,7 +102,7 @@ void TestSendReceive(CommunicatorClass &MyComm) {
   ReturnSync();
 }
 
-void TestSendrecv(CommunicatorClass &MyComm) {
+void Simulation::TestSendrecv(CommunicatorClass &MyComm) {
   int nProcs = MyComm.NumProcs();
   int myProc = MyComm.MyProc();
   int sendProc = (myProc+1) % nProcs;
@@ -125,7 +125,7 @@ void TestSendrecv(CommunicatorClass &MyComm) {
   ReturnSync();
 }
 
-void TestSums(CommunicatorClass &MyComm) {
+void Simulation::TestSums(CommunicatorClass &MyComm) {
   int myProc = MyComm.MyProc();
 
   // int test
