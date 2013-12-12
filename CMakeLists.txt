@@ -188,7 +188,7 @@ SET (TEMPLATE_SRCS src/main.cpp
   src/Communication/Communication.cpp
   src/IO/InputFile.cpp
   src/SimulationClass.cpp
-  src/MPITests.cpp
+  src/Tests.cpp
   src/RNG/RNG.cpp
   src/RNG/sfmt.cpp
   src/RNG/mersenne.cpp

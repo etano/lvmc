@@ -35,6 +35,7 @@ public:
   void Run();
 
   // Tests
+  void Tests();
   void HDF5Tests();
   void MPITests();
   void ReturnSync();
