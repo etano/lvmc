@@ -185,15 +185,15 @@ LINK_DIRECTORIES(${HDF5_LIB_DIR})
 
 # Create target
 SET (TEMPLATE_SRCS src/main.cpp
-  src/Communication/Communication.cpp
-  src/IO/InputFile.cpp
+  src/Utils/Communication/Communication.cpp
+  src/Utils/IO/InputFile.cpp
+  src/Utils/RNG/RNG.cpp
+  src/Utils/RNG/sfmt.cpp
+  src/Utils/RNG/mersenne.cpp
+  src/Utils/RNG/userintf.cpp
+  src/Utils/RNG/stoc1.cpp
   src/SimulationClass.cpp
-  src/Tests.cpp
-  src/RNG/RNG.cpp
-  src/RNG/sfmt.cpp
-  src/RNG/mersenne.cpp
-  src/RNG/userintf.cpp
-  src/RNG/stoc1.cpp)
+  src/Tests.cpp)
 ADD_EXECUTABLE(template ${TEMPLATE_SRCS})
 TARGET_LINK_LIBRARIES(template ${LAPACK_LIBS} ${ARMA_LIBS} ${HDF5_LIBS})
 

@@ -2,11 +2,11 @@
 #define SimulationClass_H
 
 #include <iostream>
-#include "config.h"
-#include "Communication/Communication.h"
-#include "IO/InputFile.h"
-#include "IO/IO.h"
-#include "RNG/RNG.h"
+#include "Utils/config.h"
+#include "Utils/Communication/Communication.h"
+#include "Utils/IO/InputFile.h"
+#include "Utils/IO/IO.h"
+#include "Utils/RNG/RNG.h"
 
 class Simulation
 {
