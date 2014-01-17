@@ -4,9 +4,9 @@
 #include <iostream>
 #include "Utils/config.h"
 #include "Utils/Communication/Communication.h"
-#include "Utils/IO/InputFile.h"
-#include "Utils/IO/IO.h"
-#include "Utils/RNG/RNG.h"
+#include "Utils/IO/InputClass.h"
+#include "Utils/IO/IOClass.h"
+#include "Utils/RNG/RNGClass.h"
 
 class Simulation
 {
@@ -22,14 +22,16 @@ public:
   RNG rng;
 
   // Inputs
-  Input In;
-  void ReadInput(string inFile);
+  Input in;
+  IOClass out;
+  void SetupIO(string inFile);
 
   // MPI setup
   CommunicatorClass WorldComm; // This is the global MPIWORLD communicator.
   CommunicatorClass InterComm; // This is for communication between the rank 0 procs of each walker group.
   CommunicatorClass IntraComm; // This is for commmunication between procs within a walker group.
   void BuildMPIModel();
+  int procsPerGroup;
 
   // Algorithm
   void Run();

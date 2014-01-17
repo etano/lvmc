@@ -1,14 +1,19 @@
 #include "SimulationClass.h"
 
-void Simulation::ReadInput(string inFile)
+void Simulation::SetupIO(string inFile)
 {
-  In.load(inFile);
+  // Input
+  in.load(inFile);
+
+  // Output
+  string outputPrefix = in.getChild("IO").getAttribute<string>("outputPrefix");
+  out.load(outputPrefix);
 }
 
 void Simulation::BuildMPIModel()
 {
+  procsPerGroup = in.getChild("Parallel").getAttribute<int>("procsPerGroup",1);
   int N = WorldComm.NumProcs();
-  int procsPerGroup = In.procsPerGroup;
   assert ((N % procsPerGroup) == 0);
   int nGroups = N/procsPerGroup;
   int myGroup = WorldComm.MyProc()/procsPerGroup;
@@ -34,5 +39,4 @@ void Simulation::Run()
 {
   Tests();
 }
-
 

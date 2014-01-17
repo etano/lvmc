@@ -16,7 +16,7 @@ int main(int argc, char** argv)
   }
 
   Simulation sim;
-  sim.ReadInput(inFile);
+  sim.SetupIO(inFile);
   sim.BuildMPIModel();
   sim.Run();
 

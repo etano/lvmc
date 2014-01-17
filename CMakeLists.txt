@@ -124,10 +124,6 @@ SET(BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
 # Dependencies
 #-------------------------------------------------------------------
 
-# Find Boost (only need headers for ptree)
-SET(BOOST_INCLUDE_DIRS $ENV{BOOST_HOME}/include)
-INCLUDE_DIRECTORIES(${BOOST_INCLUDE_DIRS})
-
 # Find Lapack/Blas/Atlas/MKL/XLmass/ESSL/...
 SET(LAPACKLIBS "")
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES "ppc") # This covers GNU and IBM Compilers on BGQ
@@ -186,8 +182,9 @@ LINK_DIRECTORIES(${HDF5_LIB_DIR})
 # Create target
 SET (TEMPLATE_SRCS src/main.cpp
   src/Utils/Communication/Communication.cpp
-  src/Utils/IO/InputFile.cpp
-  src/Utils/RNG/RNG.cpp
+  src/Utils/IO/InputClass.cpp
+  src/Utils/IO/xmlParser.cpp
+  src/Utils/RNG/RNGClass.cpp
   src/Utils/RNG/sfmt.cpp
   src/Utils/RNG/mersenne.cpp
   src/Utils/RNG/userintf.cpp
