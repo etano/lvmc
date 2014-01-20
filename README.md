@@ -1,7 +1,7 @@
-HPCTemplate
+LVMC
 ========
 
-Blank starting point for c++ repo
+Lattice variational monte carlo code in c++
 
 Make sure MKL_HOME, MPI_HOME, and ARMA_HOME are set or in your PATH and LD_LIBRARY_PATH
 
