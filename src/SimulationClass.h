@@ -7,6 +7,7 @@
 #include "Utils/IO/InputClass.h"
 #include "Utils/IO/IOClass.h"
 #include "Utils/RNG/RNGClass.h"
+#include "LatticeBuilderClass.h"
 
 class Simulation
 {
@@ -35,18 +36,6 @@ public:
 
   // Algorithm
   void Run();
-
-  // Tests
-  void Tests();
-  void HDF5Tests();
-  void MPITests();
-  void ReturnSync();
-  void TestInverse(CommunicatorClass &MyComm);
-  void TestAllGatherCols(CommunicatorClass &MyComm);
-  void TestBroadcast(CommunicatorClass &MyComm);
-  void TestSendReceive(CommunicatorClass &MyComm);
-  void TestSendrecv(CommunicatorClass &MyComm);
-  void TestSums(CommunicatorClass &MyComm);
 
 };
 

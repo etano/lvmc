@@ -1,8 +1,4 @@
 <Input>
-  <IO>
-    <OutputPrefix>test</OutputPrefix>
-  </IO>
-  <Parallel>
-    <ProcsPerGroup>2</ProcsPerGroup>
-  </Parallel>
+  <IO outputPrefix="test" />
+  <Parallel procsPerGroup="2" />
 </Input>

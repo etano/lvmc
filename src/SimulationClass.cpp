@@ -37,6 +37,10 @@ void Simulation::BuildMPIModel()
 
 void Simulation::Run()
 {
-  Tests();
+  LatticeBuilder lb(in, out);
+  Lattice* lat = lb.BuildLattice();
+  lb.Report();
+  cout << lat->T_ij << endl;
+  cout << lat->nn_ij << endl;
 }
 

@@ -189,10 +189,10 @@ SET (TEMPLATE_SRCS src/main.cpp
   src/Utils/RNG/mersenne.cpp
   src/Utils/RNG/userintf.cpp
   src/Utils/RNG/stoc1.cpp
-  src/SimulationClass.cpp
-  src/Tests.cpp)
-ADD_EXECUTABLE(template ${TEMPLATE_SRCS})
-TARGET_LINK_LIBRARIES(template ${LAPACK_LIBS} ${ARMA_LIBS} ${HDF5_LIBS})
+  src/LatticeBuilderClass.cpp
+  src/SimulationClass.cpp)
+ADD_EXECUTABLE(lvmc ${TEMPLATE_SRCS})
+TARGET_LINK_LIBRARIES(lvmc ${LAPACK_LIBS} ${ARMA_LIBS} ${HDF5_LIBS})
 
 # Install to home directory
-INSTALL(TARGETS template DESTINATION $ENV{HOME}/bin)
+INSTALL(TARGETS lvmc DESTINATION $ENV{HOME}/bin)
